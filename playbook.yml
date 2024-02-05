@@ -1,0 +1,17 @@
+---
+- name: Check and clean /tmp directory
+  hosts: servers
+  gather_facts: true
+
+  tasks:
+    - name: Get /tmp disk usage
+      shell: "df -h /tmp | awk 'NR==2{print $5}' | cut -d'%' -f1"
+      register: disk_usage_result
+
+    - name: Check if disk usage exceeds 85%
+      when: disk_usage_result.stdout | int > 85
+      block:
+        - name: Run cleanup command
+          become: true
+          become_user: root
+          shell: "find /tmp -type f -mtime +1 -name '*.s3' -delete"
